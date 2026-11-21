@@ -146,6 +146,21 @@ export class TableAliasProxyHandler<T extends Table | View> implements ProxyHand
 			return result;
 		}
 
+		// An SQL field of a view still points at the view's own name, repoint it to the alias
+		if (
+			isChunk(value, chunkKindOf(value), chunkKinds.aliased) && isChunk(target, chunkKindOf(target), chunkKinds.view)
+		) {
+			const memo = this.memo ??= new WeakMap();
+			let result = memo.get(value);
+			if (result === undefined) {
+				memo.set(value, result = value.clone());
+				result.isSelectionField = true;
+				result.origin = this.alias;
+			}
+
+			return result;
+		}
+
 		return value;
 	}
 
